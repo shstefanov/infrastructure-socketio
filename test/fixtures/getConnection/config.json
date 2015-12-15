@@ -11,7 +11,7 @@
     "websocket": {
       "engines": ["../../../engine.js"],
       "libs": {
-        "WebsocketHandler": "../../../WebsocketHandler.js"
+        "ExtendedHandler": "./ExtendedHandler.js"
       },
       "config": {
         "socketio": {
@@ -28,7 +28,7 @@
       },
       "instances": {
         "test": {
-          "prototype": "WebsocketHandler",
+          "prototype": "ExtendedHandler",
           "options": {
             "port": 3999,
             "host": "localhost"
@@ -57,7 +57,8 @@
               "targets.target.echo | socket.session.get('key')           | session_id",
               "targets.target.echo | data / 4                            | the_data",
               "targets.target.echo | result.session_id + result.the_data | result.mul"
-            ]
+            ],
+            "selfCaller": "@selfMethod | data, 14 | self_caller_result"
           }
         }
       }

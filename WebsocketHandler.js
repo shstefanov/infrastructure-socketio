@@ -97,7 +97,10 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
 
   parseHandler: function(handler, path){
     if(_.isFunction(handler))    return handler;
-    else if(_.isString(handler)) return this.createDoCaller(handler, path);
+    else if(_.isString(handler)) {
+      if(handler.indexOf("@") === 0) return this.createSelfCaller(handler, path);
+      return this.createDoCaller(handler, path);
+    }
     else if(_.isArray(handler))  return this.createChain(handler);
     else if(_.isObject(handler)) return this.createConcurent(handler);
   },
@@ -134,6 +137,26 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
         dataPatcher(do_result, result);
         cb( null, socket, data, result );
       }])));
+    };
+  },
+
+  createSelfCaller: function(str, path){
+    var self          = this;
+    var parts         = str.split(/[^|\\][|][^|]/).map(function(s){return s.trim();});
+    parts[0] = parts[0].replace(/^@/, "");
+    if(path) parts[2] = path;
+    var argGetter     = parts[1]? new Function( "socket, data, result", "return [" + parts[1] + "];" ) : this.defaultArgGetter;
+    var dataPatcher   = parts[2]? function(data, result){ helpers.patch(result, parts[2], data); }        : this.defaultDataPatcher;
+    return function(socket, data, result, cb){
+      try{var do_args = argGetter(socket, data, result, _);} catch(err){ return cb(err.stack); }
+      // console.log("selfCaller???", data, result, cb);
+      // try{
+      self[parts[0]].apply(self, do_args.concat([function(err, do_result){
+        if(err) return cb(err);
+        dataPatcher(do_result, result);
+        cb( null, socket, data, result );
+      }]));        
+      // }catch(err){ console.error(err) }
     };
   },
 

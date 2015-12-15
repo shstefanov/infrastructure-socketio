@@ -110,6 +110,14 @@ describe("infrastructure-socketio connection and usage", function(){
     });
   });
 
+  it("selfCaller", function(done){
+    client.selfCaller(12, function(err, result){
+      assert.equal(err, null);
+      assert.deepEqual(result, { self_caller_result: 26 });
+      done();
+    });
+  });
+
   it("Stops application", function(done){
     env.stop(function(err){
       assert.equal(err, null);
