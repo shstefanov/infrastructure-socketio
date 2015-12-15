@@ -1,0 +1,66 @@
+{
+ "structures": {
+
+    "targets": {
+      "path": "targets",
+      "engines": [],
+      "config": {}
+    },
+
+
+    "websocket": {
+      "engines": ["../../../engine.js"],
+      "libs": {
+        "WebsocketHandler": "../../../WebsocketHandler.js"
+      },
+      "config": {
+        "socketio": {
+          "serveClient": false,
+          "pingTimeout": 10000,
+          "pingInterval": 10000,
+          "maxHttpBufferSize" : 1048576,
+          "transports": [  "websocket" , "polling" ],
+          "allowUpgrades": true,
+          "perMessageDeflate": true,
+          "httpCompression": true,
+          "cookie": false
+        }
+      },
+      "instances": {
+        "test": {
+          "prototype": "WebsocketHandler",
+          "options": {
+            "port": 3999,
+            "host": "localhost"
+          },
+          "listenSocket": {
+            "multiply":   "targets.target.targetMethod  | data     | multiply_result",
+            "chain":      [
+              "targets.target.targetMethod | 10 | result1",
+              "targets.target.targetMethod | 20 | result2"
+            ],
+            "parallel":      {
+              "parallel_result_1": "targets.target.targetMethod | 15",
+              "parallel_result_2": "targets.target.targetMethod | 25",
+              "parallel_result_3": "targets.target.targetMethod | 35"
+            },
+            "combined":      {
+              "parallel_result_1": "targets.target.targetMethod | 15",
+              "parallel_result_2": "targets.target.targetMethod | 25",
+              "parallel_result_3": "targets.target.targetMethod | 35",
+              "parallel_result_4": [
+                "targets.target.targetMethod | 10 | result1",
+                "targets.target.targetMethod | 20 | result2"
+              ]
+            },
+            "argsGetter": [
+              "targets.target.echo | socket.session.get('key')           | session_id",
+              "targets.target.echo | data / 4                            | the_data",
+              "targets.target.echo | result.session_id + result.the_data | result.mul"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

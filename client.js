@@ -1,18 +1,17 @@
 var _                = require("underscore");
 var helpers          = require("infrastructure/lib/helpers"); 
 var Controller       = require("infrastructure/lib/client/Controller");
-var WebsocketWrapper = require("./lib/WebsocketWrapper")
 
 module.exports   = Controller.extend("BaseWebsocketController", {
 
   init: function(options, cb){ 
-    _.extend(this.config, {multiplex: false, reconnection: false });
+    _.extend(this.config, { multiplex: false, reconnection: false });
     var self = this;
     this.setupSocket(this.config, function(err){
       if(err) return cb(err);
       self.trigger("connect");
       cb();
-    }); 
+    }, this ); 
   },
 
   setupSocket: helpers.chain([
@@ -27,14 +26,16 @@ module.exports   = Controller.extend("BaseWebsocketController", {
     },
 
     function(socket, settings, cb){
-      socket.on("init", function(initData){
+      var self = this;
+      socket.once("init", function(initData){
+        self.initData = initData;
         settings.reconnect = "&reconnect_token="+initData.reconnect_token;
         cb( null, socket, settings, initData );
       });
 
 
       var self = this;
-      socket.on("disconnect", function(){
+      socket.once("disconnect", function(){
 
 
         var i = setInterval(function(){
@@ -52,7 +53,11 @@ module.exports   = Controller.extend("BaseWebsocketController", {
     },
 
     function(socket, settings, initData, cb){
-      this.socket = new WebsocketWrapper(socket, settings, initData);
+      var self = this;
+      initData.methods.forEach(function(method_name){
+        self[method_name] = function(){ socket.emit.apply(socket, [method_name].concat([].slice.call(arguments))); }
+      });
+      this.socket = socket;
       cb();
     }]
   ),

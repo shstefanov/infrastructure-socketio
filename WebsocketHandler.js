@@ -67,6 +67,9 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
   // and to get websocket configurtion for connection 
   // to this websocket application
   getConnection: function(key, options, cb){
+
+    if(!cb){ cb = options, options = {}; }
+
     var settings = _.pick(this.options, ["protocol", "path", "transports", "host", "port", "name"]);
     if(this.options.connect_port) settings.port = this.options.connect_port;
     var token = this.generateConnectionToken(key);
@@ -122,7 +125,7 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     var self          = this;
     var parts         = str.split(/[^|\\][|][^|]/).map(function(s){return s.trim();});
     if(path) parts[2] = path;
-    var argGetter     = parts[1]? new Function( "socket, data, result, _", "return [" + parts[1] + "];" ) : this.defaultArgGetter;
+    var argGetter     = parts[1]? new Function( "socket, data, result", "return [" + parts[1] + "];" ) : this.defaultArgGetter;
     var dataPatcher   = parts[2]? function(data, result){ helpers.patch(result, parts[2], data); }        : this.defaultDataPatcher;
     return function(socket, data, result, cb){
       try{var do_args = argGetter(socket, data, result, _);} catch(err){ return cb(err.stack); }
@@ -175,16 +178,9 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     socket.emit("init", init );
     session.addSocket(socket);
 
-
-    console.log("connected", socket.id);
     socket.once("disconnect", function(){
-      console.log("disconnected", socket.id);
       self.reconnect_tokens[socket.reconnect_token] = session.id;
     });
-
-    // setTimeout(function(){
-    //   socket.disconnect();
-    // },3000)
 
   },
 
