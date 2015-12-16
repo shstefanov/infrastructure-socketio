@@ -1,4 +1,3 @@
-var cookie       = require("cookie");
 var _            = require("../infrastructure/node_modules/underscore");
 var helpers      = require("../infrastructure/lib/helpers");
 var EventedClass = require("../infrastructure/lib/EventedClass");
@@ -35,7 +34,6 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     this.reconnect_tokens   = {};
 
     this.sessions = new this.SessionsCollection();
-    this.sessions.indexBy("cookie", function(session){ return session.cookie; });
 
     sio.checkRequest = function(req, cb){ self.trigger( "request", req, cb ); };
 
