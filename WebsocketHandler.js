@@ -1,6 +1,6 @@
-var _            = require("../infrastructure/node_modules/underscore");
-var helpers      = require("../infrastructure/lib/helpers");
-var EventedClass = require("../infrastructure/lib/EventedClass");
+var _            = require("underscore");
+var helpers      = require("infrastructure/lib/helpers");
+var EventedClass = require("infrastructure/lib/EventedClass");
 
 var noop = function(){};
 
