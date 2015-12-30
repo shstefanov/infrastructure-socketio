@@ -147,14 +147,11 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     var dataPatcher   = parts[2]? function(data, result){ helpers.patch(result, parts[2], data); }        : this.defaultDataPatcher;
     return function(socket, data, result, cb){
       try{var do_args = argGetter(socket, data, result, _);} catch(err){ return cb(err.stack); }
-      // console.log("selfCaller???", data, result, cb);
-      // try{
       self[parts[0]].apply(self, do_args.concat([function(err, do_result){
         if(err) return cb(err);
         dataPatcher(do_result, result);
         cb( null, socket, data, result );
       }]));        
-      // }catch(err){ console.error(err) }
     };
   },
 
