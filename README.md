@@ -77,3 +77,24 @@ Client
       controller.eventName({a: 55}, function(err, result){ /* ... */ });
       controller.otherEvent({a: 66}, function(err, result){ /* ... */ });
     });
+
+
+V0.4.0
+======
+
+WebsocketHandler#emit provides scheme for emitting events and data to subject sockets. Giving 'key' argument means all of sockets, registered under given key will recieve the message
+
+
+    // Send message and data to one subject
+    target.emit(123,        "msg", {text: "Hello"}) 
+
+    // Send message and data to multiple subjects
+    target.emit([123, 133], "msg", {text: "Hello"}) 
+
+    // Send message and individual sets of data to multiple subjects with 
+    target.emit([
+      //  key             data
+      [   123,       {text: "Hello 123"}],
+      [   133,       {text: "Hello 133"}],
+      [   144,       {text: "Hello 144"}]
+    ], "msg"  /* event name */   )

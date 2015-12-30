@@ -26,7 +26,7 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
         config  = env.config, 
         io      = env.engines.io,
         options = _.extend({}, config.socketio, { path: this.options.path }),
-        sio     = this.sio = io(options);
+        sio     = this.io = io(options);
 
     env.stops.push(function(cb){ sio.close(); cb(); });
 
@@ -58,6 +58,41 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
   // Generating one-time token
   generateConnectionToken: function(key){
     return _.uniqueId(this.name);
+  },
+
+
+
+  /*
+
+    // Send message and data to one subject
+    target.emit(123,        "message", {text: "Hello"}) 
+
+    // Send message and data to multiple subjects
+    target.emit([123, 133], "message", {text: "Hello"}) 
+
+    // Send message and individual sets of data to multiple subjects with 
+    target.emit([
+      [123, {text: "Hello 123"}],
+      [133, {text: "Hello 133"}],
+      [144, {text: "Hello 144"}]
+    ], "message")
+
+  */
+  emit: function(key, event, data, cb){
+    if(key === null) key = this.sessions.keys();
+    if(!cb) cb = typeof data === "function" ? data : undefined;
+    if(Array.isArray(key)){
+      for(var i=0;i<key.length;i++){
+        if(Array.isArray(key[i])) this.emit( key[i][0], event, key[i][1]);
+        else this.emit(key[i], event, data);
+      }
+    }
+    else{
+      var session = this.sessions.get(key);
+      session.emit(event, data);
+    }
+
+    cb && cb();
   },
 
   // When request hits page, it will call this 
@@ -256,14 +291,6 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     },
 
   ]),
-
-  // handleSocket: function( socket, session ){
-  //   session.addSocket(socket);
-  // },
-
-  // handleSession: function(session){
-
-  // },
 
 });
 

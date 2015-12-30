@@ -3,7 +3,6 @@ var assert = require("assert");
 var _      = require("underscore");
 describe("infrastructure-socketio connection and usage", function(){
   var env, socket;
-  var io = require("socket.io-client");
   var infrastructure_test = require("infrastructure/test_env");
   var Client = require("../client.js");
   
