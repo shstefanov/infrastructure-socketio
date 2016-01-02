@@ -11,7 +11,7 @@ Configuration
 
     {
       "path":   "websocket",
-      "engines": ["infrastructure-socketio/engine"],
+      "engine": "infrastructure-socketio/engine",
       "config": {
         "socketio": {
           "serveClient": false,

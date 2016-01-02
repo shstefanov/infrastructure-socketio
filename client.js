@@ -36,19 +36,12 @@ module.exports   = Controller.extend("BaseWebsocketController", {
 
       var self = this;
       socket.once("disconnect", function(){
-
-
-        var i = setInterval(function(){
+         var i = setInterval(function(){
           self.setupSocket(self.config, function(err){
             if(err) return console.error(err);
             clearInterval(i);
           });  
-        }, 3000);
-        
-        self.setupSocket(self.config, function(){
-          self.trigger("reconnect");
-        });
-
+        }, 5000 );
       });
     },
 

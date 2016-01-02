@@ -162,7 +162,8 @@ describe(`infrastructure-socketio emit \n    ${__filename}`, () => {
 
 
   describe("Stop",  () => {
-    it("Stops application", (done) => {
+    it("Stops application", function(done){
+      this.timeout(10000);
       env.stop( (err) => {
         assert.equal(err, null);
         done();

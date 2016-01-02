@@ -28,7 +28,11 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
         options = _.extend({}, config.socketio, { path: this.options.path }),
         sio     = this.io = io(options);
 
-    env.stops.push(function(cb){ sio.close(); cb(); });
+    var self = this;
+    env.stops.push(function(cb){
+      sio.close(); 
+      cb(); 
+    });
 
     this.tokens             = {};
     this.reconnect_tokens   = {};
@@ -42,6 +46,11 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
       .on( "session",  this.handleSocket,      this )
       .on( "error",    this.handleError,       this )
       .on( "socket",   this.bindSocketEvents,  this );
+
+    this.sessions.on("empty", this.emptySession, this);
+    this.sessions.on("disconnect", function(session){
+      this.trigger("disconnect", session);
+    }, this);
 
     sio.listen(this.options.port);
 
@@ -58,6 +67,18 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
   // Generating one-time token
   generateConnectionToken: function(key){
     return _.uniqueId(this.name);
+  },
+
+  emptySession: function(session){
+    if(session.forceDisconnect === true) return;
+  },
+
+  disconnect: function(key, cb){
+    var session = this.sessions.get(key);
+    if(!session) return cb && cb("Session doesn't exist");
+    var num = session.getSocketsNumber();
+    session.disconnect();
+    cb && cb(null, num);
   },
 
 

@@ -121,7 +121,8 @@ describe(`infrastructure-socketio connection and common usage\n    ${__filename}
     });
   });
 
-  it("Stops application", (done) => {
+  it("Stops application", function(done){
+    this.timeout(10000);
     env.stop((err) => {
       assert.equal(err, null);
       done();
