@@ -91,6 +91,16 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     cb && cb(null, num);
   },
 
+  disconnectAll: function(cb){
+    var result = { sessions: this.sessions.length, sockets: 0 };
+    var self = this;
+    this.sessions.each(function(session){ 
+      result.sockets += session.getSocketsNumber();
+      self.disconnect(socket.id);
+    });
+    cb && cb(null, result);
+  },
+
 
 
   /*
