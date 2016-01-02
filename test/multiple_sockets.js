@@ -25,7 +25,7 @@ describe(`infrastructure-socketio handle disconnect \n    ${__filename}`, () => 
   });
   
 
-  describe("WebsocketHandler # disconnect", () => {
+  describe("WebsocketHandler # disconnect (serverside)", () => {
     
     var clients;
     it("Prepare 5 connections under 1 subject key", (done) => {
@@ -68,111 +68,50 @@ describe(`infrastructure-socketio handle disconnect \n    ${__filename}`, () => 
       });
     });
 
-    // it("Disconnects all sockets of given subject", (done) => {     
-    //   env.i.do("websocket.test.disconnect", "subject_key", (err, result) =>{
-    //     assert.equal(err, null);
-    //     console.log("Disconnected");
-    //     done();
-    //   });
-    // });
+  });
 
-    // it("Emits custom_event to some of clients using key list", (done) => {
-    //   Promise.all(clients.slice(0,3).map( (client, i) => {
-    //     return new Promise( (resolve, reject) => {
-    //       client.socket.once("some_event", (data) => {
-    //         resolve(data);
-    //       });
-    //     });
-    //   })).then( (values) => {
-    //     assert.deepEqual(values, [
-    //       {some_data: true},{some_data: true},{some_data: true}
-    //     ]);
-    //     done();
-    //   });
-    //   env.i.do("websocket.test.emit", ["connection_1","connection_2","connection_3"], "some_event", {some_data: true} );
-    // });
+  describe("WebsocketController # disconnect (clientside)", () => {
+    
+    var clients;
+    it("Prepare 5 connections under 1 subject key", (done) => {
+      Promise.all( [1,2,3].map( (n, i) => {
+        return new Promise( (resolve, reject) => {
+          env.i.do("websocket.test.getConnection", "another_subject_key", (err, connection_settings) => {
+            if(err) return reject(err);
+            let ClientController = Client.extend("TestWebsocketClientController", { config: connection_settings });
+            let client = new ClientController();
+            client.init({}, (err) => { err? reject(err) : resolve(client) });
+          });
+        });
+      })).then( (c) => { 
+        clients = c;
+        done(); 
+      });
+    });
 
-    // it("Emits individual data for given keys",  (done) =>{
-    //   Promise.all(clients.slice(2).map( (client, i) =>{
-    //     return new Promise( (resolve, reject) =>{
-    //       client.socket.once("individual_data",  (data) =>{
-    //         resolve(data);
-    //       });
-    //     });
-    //   })).then( (values) =>{
-    //     assert.deepEqual(values, [
-    //       {individual_data: 3},{individual_data: 4},{individual_data: 5}
-    //     ]);
-    //     done();
-    //   });
-    //   env.i.do("websocket.test.emit", [
-    //     ["connection_3", {individual_data: 3}],
-    //     ["connection_4", {individual_data: 4}],
-    //     ["connection_5", {individual_data: 5}],     ], "individual_data" );
-    // });
+    it("Has 1 session with 5 socket connections in handler", (done) => {
+      env.i.do("websocket.test.getSessionsInfo", (err, result) => {
+        assert.equal(err, null);
+        assert.deepEqual(result, { another_subject_key: 3 });
+        done();
+      });
+    });
 
-    // it("Emits custom_event to all clients using null as key (with callback)",  (done) =>{
-    //   var resolveCb,  cbPromise = new Promise( (resolve) => { resolveCb = resolve; });
-    //   Promise.all(clients.map( (client, i) => {
-    //     return new Promise( (resolve, reject) => {
-    //       client.socket.once("custom_event",  (data) => {
-    //         resolve(data);
-    //       });
-    //     });
-    //   }).concat([cbPromise])).then( (values) => {
-    //     assert.deepEqual(values, [
-    //       {custom_data: true},{custom_data: true},{custom_data: true},{custom_data: true},{custom_data: true}, true
-    //     ]);
-    //     done();
-    //   });
-    //   env.i.do("websocket.test.emit", null, "custom_event", {custom_data: true},  (err) => {
-    //     assert.equal(err, null);
-    //     resolveCb(true);
-    //   });
-    // });
+    it("Disconnects all subjects sockets", (done) => {
+      env.i.do("websocket.test.waitEmpty", (err, session) => {
+        assert.equal(err, null);
+        done();
+      });
+      clients.forEach( (client) => { client.disconnect(); } );
+    });
 
-    // it("Emits custom_event to some of clients using key list (with callback)",  (done) => {
-    //   var resolveCb,  cbPromise = new Promise( (resolve) => { resolveCb = resolve; });
-    //   Promise.all(clients.slice(0,3).map( (client, i) => {
-    //     return new Promise( (resolve, reject) => {
-    //       client.socket.once("some_event", (data) => {
-    //         resolve(data);
-    //       });
-    //     });
-    //   }).concat([cbPromise])).then( (values) => {
-    //     assert.deepEqual(values, [
-    //       {some_data: true},{some_data: true},{some_data: true}, true
-    //     ]);
-    //     done();
-    //   });
-    //   env.i.do("websocket.test.emit", ["connection_1","connection_2","connection_3"], "some_event", {some_data: true}, (err) => {
-    //     assert.equal(err, null);
-    //     resolveCb(true);
-    //   });
-    // });
-
-    // it("Emits individual data for given keys (with callback)", (done) => {
-    //   var resolveCb,  cbPromise = new Promise( (resolve) => { resolveCb = resolve; });
-    //   Promise.all(clients.slice(2).map( (client, i) => {
-    //     return new Promise( (resolve, reject) => {
-    //       client.socket.once("individual_data", (data) => {
-    //         resolve(data);
-    //       });
-    //     });
-    //   }).concat([cbPromise])).then( (values) => {
-    //     assert.deepEqual(values, [
-    //       {individual_data: 3},{individual_data: 4},{individual_data: 5}, true
-    //     ]);
-    //     done();
-    //   });
-    //   env.i.do("websocket.test.emit", [
-    //     ["connection_3", {individual_data: 3}],
-    //     ["connection_4", {individual_data: 4}],
-    //     ["connection_5", {individual_data: 5}],     ], "individual_data", (err) => {
-    //       assert.equal(err, null);
-    //       resolveCb(true);
-    //     });
-    // });
+    it("Does not have sessions after disconnect", (done) => {
+      env.i.do("websocket.test.getSessionsInfo", (err, result) => {
+        assert.equal(err, null);
+        assert.deepEqual(result, {});
+        done();
+      });
+    });
 
   });
 
