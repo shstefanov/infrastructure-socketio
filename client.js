@@ -7,16 +7,32 @@ module.exports   = Controller.extend("BaseWebsocketController", {
   init: function(options, cb){ 
     _.extend(this.config, { multiplex: false, reconnection: false });
     var self = this;
-    this.setupSocket(this.config, function(err){
+    this.connect(this.config, function(err){
       if(err) return cb(err);
       self.trigger("connect");
       cb();
     }, this ); 
   },
 
-  setupSocket: helpers.chain([
+  disconnect: function(cb){
+    var self = this;
+
+    this.initData.methods.forEach(function(method_name){
+      self[method_name] = function(){ console.error("Websocket is disconnected"); }
+    });
+    var socket = this.socket;
+    socket.removeAllListeners();
+    delete this.socket;
+
+    this.forceDisconnect = true;
+    socket.disconnect();
+
+  },
+
+  connect: helpers.chain([
     
     function(settings, cb){
+      this.forceDisconnect = false;
       var io = require("socket.io-client");
       var socket = io.connect([settings.protocol, settings.host, ":", settings.port, "?", settings.query, settings.reconnect||""].join(""),  settings);
       socket.once("error", cb);
@@ -36,7 +52,8 @@ module.exports   = Controller.extend("BaseWebsocketController", {
 
       var self = this;
       socket.once("disconnect", function(){
-         var i = setInterval(function(){
+        if(self.forceDisconnect === true) return;
+        var i = setInterval(function(){
           self.setupSocket(self.config, function(err){
             if(err) return console.error(err);
             clearInterval(i);
