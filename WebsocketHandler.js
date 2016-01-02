@@ -71,6 +71,8 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
 
   emptySession: function(session){
     if(session.forceDisconnect === true) return;
+    // TODO: emptySessionDisconnectTimeout
+    this.disconnect(session.id);
   },
 
   methods: [
