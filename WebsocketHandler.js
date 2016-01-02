@@ -73,6 +73,14 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     if(session.forceDisconnect === true) return;
   },
 
+  methods: [
+    // White list that makes only these methods callable
+    "disconnect",
+    "disconnectAll",
+    "emit",
+    "getConnection"
+  ],
+
   disconnect: function(key, cb){
     var session = this.sessions.get(key);
     if(!session) return cb && cb("Session doesn't exist");
