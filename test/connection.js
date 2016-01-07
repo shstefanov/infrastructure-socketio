@@ -1,17 +1,21 @@
-var path   = require("path");
-var assert = require("assert");
-var _      = require("underscore");
-describe("infrastructure-socketio connection and usage", function(){
-  var env, socket;
-  var io = require("socket.io-client");
-  var infrastructure_test = require("infrastructure/test_env");
-  var Client = require("../client.js");
+"use strict";
+
+const path   = require("path");
+const assert = require("assert");
+const _      = require("underscore");
+
+describe(`infrastructure-socketio connection and common usage\n    ${__filename}`, () => {
   
-  it("starts application", function(done){
+  const infrastructure_test = require("infrastructure/test_env");
+  const Client = require("../client.js");
+  
+  var env, socket;
+  
+  it("starts application", (done) => {
     infrastructure_test.start({
       rootDir: path.join(__dirname, "fixtures/getConnection"),
       process_mode: "cluster"
-    }, function(err, _env){
+    }, (err, _env) => {
       assert.equal(err, null);
       env = _env;
       done();
@@ -19,10 +23,9 @@ describe("infrastructure-socketio connection and usage", function(){
   });
 
 
-  it("getConnection returns with connection details", function(done){
-    env.i.do("websocket.test.getConnection", "some_key_string", function(err, connection_data){
+  it("getConnection returns with connection details", (done) => {
+    env.i.do("websocket.test.getConnection", "some_key_string", (err, connection_data) => {
       assert.equal(err, null);
-      connection_settings = connection_data;
       assert.deepEqual(connection_data, { 
         protocol: 'ws://',
         path: '/websocket/test',
@@ -41,39 +44,39 @@ describe("infrastructure-socketio connection and usage", function(){
 
   var ClientController, client;
 
-  it("Connects to websocket server using given settings", function(done){
+  it("Connects to websocket server using given settings", (done) => {
     client = new ClientController();
-    client.init({}, function(err){
+    client.init({}, (err) => {
       assert.equal(err, null);
       done();
     });
   });
 
-  it("Controller has specific methods mapped to specific socket events", function(done){
+  it("Controller has specific methods mapped to specific socket events", (done) => {
     assert.equal(_.isFunction(client.multiply), true );
     assert.equal(_.isFunction(client.chain   ), true );
     assert.equal(_.isFunction(client.parallel   ), true );
     done();
   });
 
-  it("Executing method that calls some target", function(done){
-    client.multiply(12, function(err, result){
+  it("Executing method that calls some target", (done) => {
+    client.multiply(12, (err, result) => {
       assert.equal(err, null);
       assert.deepEqual(result, { multiply_result: 36 });
       done();
     });
   });
 
-  it("Executing chain of methods", function(done){
-    client.chain(12, function(err, result){
+  it("Executing chain of methods", (done) => {
+    client.chain(12, (err, result) => {
       assert.equal(err, null);
       assert.deepEqual(result, { result1: 30, result2: 60 });
       done();
     });
   });
 
-  it("Executing parallel methods", function(done){
-    client.parallel(12, function(err, result){
+  it("Executing parallel methods", (done) => {
+    client.parallel(12, (err, result) => {
       assert.equal(err, null);
       assert.deepEqual(result, { 
         "parallel_result_1": 45,
@@ -84,8 +87,8 @@ describe("infrastructure-socketio connection and usage", function(){
     });
   });
 
-  it("Executing combined methods", function(done){
-    client.combined(12, function(err, result){
+  it("Executing combined methods", (done) => {
+    client.combined(12, (err, result) => {
       assert.equal(err, null);
       assert.deepEqual(result, { 
         "parallel_result_1": 45,
@@ -98,8 +101,8 @@ describe("infrastructure-socketio connection and usage", function(){
     });
   });
 
-  it("Arguments getter", function(done){
-    client.argsGetter(12, function(err, result){
+  it("Arguments getter", (done) => {
+    client.argsGetter(12, (err, result) => {
       assert.equal(err, null);
       assert.deepEqual(result, { 
         session_id: 'some_key_string',
@@ -110,8 +113,8 @@ describe("infrastructure-socketio connection and usage", function(){
     });
   });
 
-  it("selfCaller", function(done){
-    client.selfCaller(12, function(err, result){
+  it("selfCaller", (done) => {
+    client.selfCaller(12, (err, result) => {
       assert.equal(err, null);
       assert.deepEqual(result, { self_caller_result: 26 });
       done();
@@ -119,7 +122,8 @@ describe("infrastructure-socketio connection and usage", function(){
   });
 
   it("Stops application", function(done){
-    env.stop(function(err){
+    this.timeout(10000);
+    env.stop((err) => {
       assert.equal(err, null);
       done();
     });

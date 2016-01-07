@@ -26,9 +26,13 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
         config  = env.config, 
         io      = env.engines.io,
         options = _.extend({}, config.socketio, { path: this.options.path }),
-        sio     = this.sio = io(options);
+        sio     = this.io = io(options);
 
-    env.stops.push(function(cb){ sio.close(); cb(); });
+    var self = this;
+    env.stops.push(function(cb){
+      sio.close(); 
+      cb(); 
+    });
 
     this.tokens             = {};
     this.reconnect_tokens   = {};
@@ -42,6 +46,11 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
       .on( "session",  this.handleSocket,      this )
       .on( "error",    this.handleError,       this )
       .on( "socket",   this.bindSocketEvents,  this );
+
+    this.sessions.on("empty", this.emptySession, this);
+    this.sessions.on("disconnect", function(session){
+      this.trigger("disconnect", session);
+    }, this);
 
     sio.listen(this.options.port);
 
@@ -58,6 +67,73 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
   // Generating one-time token
   generateConnectionToken: function(key){
     return _.uniqueId(this.name);
+  },
+
+  emptySession: function(session){
+    if(session.forceDisconnect === true) return;
+    // TODO: emptySessionDisconnectTimeout
+    this.disconnect(session.id);
+  },
+
+  methods: [
+    // White list that makes only these methods callable
+    "disconnect",
+    "disconnectAll",
+    "emit",
+    "getConnection"
+  ],
+
+  disconnect: function(key, cb){
+    var session = this.sessions.get(key);
+    if(!session) return cb && cb("Session doesn't exist");
+    var num = session.getSocketsNumber();
+    session.disconnect();
+    cb && cb(null, num);
+  },
+
+  disconnectAll: function(cb){
+    var result = { sessions: this.sessions.length, sockets: 0 };
+    var self = this;
+    this.sessions.each(function(session){ 
+      result.sockets += session.getSocketsNumber();
+      self.disconnect(socket.id);
+    });
+    cb && cb(null, result);
+  },
+
+
+
+  /*
+
+    // Send message and data to one subject
+    target.emit(123,        "message", {text: "Hello"}) 
+
+    // Send message and data to multiple subjects
+    target.emit([123, 133], "message", {text: "Hello"}) 
+
+    // Send message and individual sets of data to multiple subjects with 
+    target.emit([
+      [123, {text: "Hello 123"}],
+      [133, {text: "Hello 133"}],
+      [144, {text: "Hello 144"}]
+    ], "message")
+
+  */
+  emit: function(key, event, data, cb){
+    if(key === null) key = this.sessions.keys();
+    if(!cb) cb = typeof data === "function" ? data : undefined;
+    if(Array.isArray(key)){
+      for(var i=0;i<key.length;i++){
+        if(Array.isArray(key[i])) this.emit( key[i][0], event, key[i][1]);
+        else this.emit(key[i], event, data);
+      }
+    }
+    else{
+      var session = this.sessions.get(key);
+      session.emit(event, data);
+    }
+
+    cb && cb();
   },
 
   // When request hits page, it will call this 
@@ -256,14 +332,6 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     },
 
   ]),
-
-  // handleSocket: function( socket, session ){
-  //   session.addSocket(socket);
-  // },
-
-  // handleSession: function(session){
-
-  // },
 
 });
 
