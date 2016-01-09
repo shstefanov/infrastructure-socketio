@@ -86,7 +86,7 @@ Client
     });
 
 
-V0.4.0
+V0.3.0
 ======
 
 WebsocketHandler#emit provides scheme for emitting events and data to subject sockets. Giving 'key' argument means all of sockets, registered under given key will recieve the message
