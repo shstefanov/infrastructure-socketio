@@ -33,7 +33,7 @@ module.exports   = Controller.extend("BaseWebsocketController", {
     
     function(settings, cb){
       this.forceDisconnect = false;
-      var io = require("socket.io-client");
+      var io = require("socket.io-client/socket.io.js");
       var socket = io.connect([settings.protocol, settings.host, ":", settings.port, "?", settings.query, settings.reconnect||""].join(""),  settings);
       socket.once("error", cb);
       socket.once("connect", function(){
