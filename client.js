@@ -51,11 +51,11 @@ module.exports   = Controller.extend("BaseWebsocketController", {
 
 
       var self = this;
+      socket.once("error", cb);
       socket.once("disconnect", function(){
         if(self.forceDisconnect === true) return;
         var i = setInterval(function(){
-          self.setupSocket(self.config, function(err){
-            if(err) return console.error(err);
+          self.connect(self.config, function(){
             clearInterval(i);
           });  
         }, 5000 );
