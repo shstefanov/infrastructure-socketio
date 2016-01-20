@@ -200,7 +200,7 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
   defaultDataPatcher: function(data, result){_.extend(result, data);},
   createDoCaller: function(str, path){
     var self          = this;
-    var parts         = str.split(/[^|\\][|][^|]/).map(function(s){return s.trim();});
+    var parts           = target.replace(/([^|])([|])([^|])/g, "$1 $2 $3").split(/[^|][|][^|]/).map( function(part){ return part.trim(); } );
     if(path) parts[2] = path;
     var argGetter     = parts[1]? new Function( "socket, data, result", "return [" + parts[1] + "];" ) : this.defaultArgGetter;
     var dataPatcher   = parts[2]? function(data, result){ helpers.patch(result, parts[2], data); }        : this.defaultDataPatcher;
@@ -216,7 +216,7 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
 
   createSelfCaller: function(str, path){
     var self          = this;
-    var parts         = str.split(/[^|\\][|][^|]/).map(function(s){return s.trim();});
+    var parts           = target.replace(/([^|])([|])([^|])/g, "$1 $2 $3").split(/[^|][|][^|]/).map( function(part){ return part.trim(); } );
     parts[0] = parts[0].replace(/^@/, "");
     if(path) parts[2] = path;
     var argGetter     = parts[1]? new Function( "socket, data, result", "return [" + parts[1] + "];" ) : this.defaultArgGetter;
