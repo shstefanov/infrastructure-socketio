@@ -86,6 +86,11 @@ Client
     });
 
 
+V0.4.0
+======
+Adding "sessionData" option to getConnection options
+
+
 V0.3.0
 ======
 
