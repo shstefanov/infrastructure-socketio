@@ -12,7 +12,8 @@ var env_mockup = {
     io(options){  
       env_mockup.sio_options = options;
       return {
-        on(){},
+        _events: {},
+        on(e, h){ this._events[e] = h; },
         listen(){}
       }
     }
@@ -21,9 +22,14 @@ var env_mockup = {
   i: { do(){} }
 };
 
+var SocketMockup = require("infrastructure/lib/EventedClass").extend("SocketMockup", {
+  disconnect: function(){ this.trigger("disconnect"); },
+  emit: function(event, data){ this.trigger("emit:"+event, data); }
+});
+
 describe(`WebsocketHandler\n    ${__filename}`, () => {
 
-  describe("constructor (default options)", function(){
+  describe("constructor (default options)", () => {
 
     it("Default options", (next) => {
       var TestWebsocketHandler = WebsocketHandler.extend("TestWebsocketHandler", {
@@ -33,9 +39,9 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         }
       });
 
-      var teshHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+      var testHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
       
-      assert.deepEqual(teshHandler.options, {
+      assert.deepEqual(testHandler.options, {
         host:         "testhost",
         port:         80,
         connect_port: 90,
@@ -61,9 +67,9 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         }
       });
 
-      var teshHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+      var testHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
       
-      teshHandler.getConnection(123, (err, connection) => {
+      testHandler.getConnection(123, (err, connection) => {
         assert.equal(err, null);
         assert.deepEqual(connection, { protocol: 'ws://',
           path: '/websocket/test',
@@ -85,9 +91,9 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         }
       });
 
-      var teshHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+      var testHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
       
-      teshHandler.getConnection(123, {string: true}, (err, connection) => {
+      testHandler.getConnection(123, {string: true}, (err, connection) => {
         assert.equal(err, null);
         assert.equal(connection, JSON.stringify({ protocol: 'ws://',
           path: '/websocket/test',
@@ -109,11 +115,11 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         }
       });
 
-      var teshHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+      var testHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
       
-      teshHandler.getConnection(123, {sessionData: {user: 555}}, (err, connection) => {
+      testHandler.getConnection(123, {sessionData: {user: 555}}, (err, connection) => {
         assert.equal(err, null);
-        assert.deepEqual(teshHandler.sessionsData, { '123': { user: 555 } });
+        assert.deepEqual(testHandler.sessionsData, { '123': { user: 555 } });
         next();
       });
     });
@@ -130,9 +136,9 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         }
       });
       env_mockup.config.socketio = {socket_io_options: {test_option: 11}};
-      var teshHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+      var testHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
 
-      assert.deepEqual(env_mockup.sio_options, { socket_io_options: { test_option: 11 }, "path": teshHandler.options.path } );
+      assert.deepEqual(env_mockup.sio_options, { socket_io_options: { test_option: 11 }, "path": testHandler.options.path } );
       next();
     });
   
@@ -144,10 +150,10 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
       var TestWebsocketHandler = WebsocketHandler.extend("TestWebsocketHandler", {
         options:{ port: 80, connect_port: 90 } 
       });
-      var teshHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+      var testHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
 
 
-      teshHandler.getConnection(1, function(err, connection){
+      testHandler.getConnection(1, (err, connection) => {
         var request_mockup = {
           _query: {token: connection.query.split("=").pop()}
         };
@@ -160,9 +166,10 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         //   name: 'test',
         //   query: 'token=4' 
         // }
-        teshHandler.io.checkRequest(request_mockup, function(err, result){
+        testHandler.io.checkRequest(request_mockup, (err, result) => {
           assert.equal(err,    null );
           assert.equal(result, true );
+          assert.equal(request_mockup.session instanceof testHandler.SessionsCollection.prototype.model, true);
           next();
         });
         
@@ -173,10 +180,10 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
       var TestWebsocketHandler = WebsocketHandler.extend("TestWebsocketHandler", {
         options:{ port: 80, connect_port: 90 } 
       });
-      var teshHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+      var testHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
 
 
-      teshHandler.getConnection(1, function(err, connection){
+      testHandler.getConnection(1, (err, connection) => {
         var request_mockup = {
           _query: {token: "invalid token"}
         };
@@ -189,7 +196,7 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         //   name: 'test',
         //   query: 'token=4' 
         // }
-        teshHandler.io.checkRequest(request_mockup, function(err, result){
+        testHandler.io.checkRequest(request_mockup, (err, result) => {
           assert.equal(err,    "Connection error" );
           //assert.equal(result, true );
           next();
@@ -202,9 +209,38 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
 
   });
 
-  xdescribe("sio.on(\"connection\")", () => {
-    it("TODO", () => {});
+  describe("sio.on(\"connection\")", () => {
+    
+    it("emitting init event", (next) => {
+      var TestWebsocketHandler = WebsocketHandler.extend("TestWebsocketHandler", {
+        options:{ port: 80, connect_port: 90 } 
+      });
+      var testHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+
+
+      testHandler.getConnection(1, (err, connection) => {
+        var request_mockup = {
+          _query: {token: connection.query.split("=").pop()}
+        };
+
+        var test_socket = new SocketMockup();
+        test_socket.request = request_mockup;
+
+        test_socket.on("emit:init", function(data){
+          assert.equal(Array.isArray(data.methods), true);
+          assert.equal(data.hasOwnProperty("reconnect_token"), true);
+          next();
+        });
+
+        testHandler.io.checkRequest(request_mockup, (err, result) => {
+          testHandler.io._events.connection(test_socket);
+        });
+        
+      });
+    });
+
   });
+
   xdescribe("Reconnection token", () => {
     it("TODO", () => {});
   });
