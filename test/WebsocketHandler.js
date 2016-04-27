@@ -160,10 +160,38 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         //   name: 'test',
         //   query: 'token=4' 
         // }
-        console.log(connection);
         teshHandler.io.checkRequest(request_mockup, function(err, result){
-          console.log("HERERE", err, result);
-          assert.equal(err, null);
+          assert.equal(err,    null );
+          assert.equal(result, true );
+          next();
+        });
+        
+      });
+    });
+
+    it("call checkRequest(invalid token)", (next) => {
+      var TestWebsocketHandler = WebsocketHandler.extend("TestWebsocketHandler", {
+        options:{ port: 80, connect_port: 90 } 
+      });
+      var teshHandler = new TestWebsocketHandler(env_mockup, "websocket", "test");
+
+
+      teshHandler.getConnection(1, function(err, connection){
+        var request_mockup = {
+          _query: {token: "invalid token"}
+        };
+        // { 
+        //   protocol: 'ws://',
+        //   path: '/websocket/test',
+        //   transports: [ 'websocket', 'xhr-polling' ],
+        //   host: 'testhost',
+        //   port: 90,
+        //   name: 'test',
+        //   query: 'token=4' 
+        // }
+        teshHandler.io.checkRequest(request_mockup, function(err, result){
+          assert.equal(err,    "Connection error" );
+          //assert.equal(result, true );
           next();
         });
         
