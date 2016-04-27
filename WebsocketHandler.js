@@ -26,7 +26,6 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
       tokenParam:     "token",                        // Optional - defaults to 'token'   
     });
 
-
     var self    = this, 
         config  = env.config, 
         io      = env.engines.io,
