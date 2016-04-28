@@ -23,7 +23,7 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
       path:           ["/", structure_name,"/", name].join(""),
       protocol:       "ws://",
       transports:     [ "websocket", "xhr-polling" ],
-      tokenParam:     "token",                        // Optional - defaults to 'token'   
+      tokenParam:     "token",                        // Optional - defaults to 'token'
     });
 
     var self    = this, 
@@ -274,8 +274,8 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
       })(event, handler);
 
     }
-    socket.emit("init", init );
     session.addSocket(socket);
+    socket.emit("init", init );
 
     socket.once("disconnect", function(){
       self.reconnect_tokens[socket.reconnect_token] = session.id;
