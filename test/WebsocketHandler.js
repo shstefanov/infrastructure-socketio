@@ -318,6 +318,7 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
           assert.equal(testHandler.sessions.length, 1);
           setTimeout( () => {
             test_socket.disconnect();
+            assert.equal(Object.keys(testHandler.reconnect_tokens).length, 1);
             assert.equal(testHandler.sessions.length, 0);
             next();
           }, 10 );
@@ -356,12 +357,14 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
               _query: { reconnect_token: data.reconnect_token }
             };
 
+            assert.equal(Object.keys(testHandler.reconnect_tokens).length, 1);
+
             var reconnected_socket = new SocketMockup();
             reconnected_socket.request = reconnect_request_mockup;
 
             reconnected_socket.on("emit:init", function(data){
-              console.log("TODO ASSERT ME ::: ", data);
-              next();
+              assert.equal(Object.keys(testHandler.reconnect_tokens).length, 0);
+              next();                
             });
 
             testHandler.io.checkRequest(reconnect_request_mockup, (err, result) => {
