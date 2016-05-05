@@ -197,7 +197,6 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         // }
         testHandler.io.checkRequest(request_mockup, (err, result) => {
           assert.equal(err,    "Connection error" );
-          //assert.equal(result, true );
           next();
         });
         
@@ -351,7 +350,6 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
         test_socket.request = request_mockup;
 
         test_socket.on("emit:init", function(data){
-          // { methods: [], reconnect_token: '21' }
           setTimeout( () => {
             test_socket.disconnect();
             var reconnect_request_mockup = {
@@ -379,10 +377,5 @@ describe(`WebsocketHandler\n    ${__filename}`, () => {
       });
     });
   });
-
-  xdescribe("Reconnection token", () => {
-    it("TODO", () => {});
-  });
-  
 
 });
