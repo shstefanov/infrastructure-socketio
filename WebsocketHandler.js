@@ -13,7 +13,9 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     this.env = env;
 
     // TODO - make interval to clean unused sessionsData
-    this.sessionsData = {};
+    this.sessionsData       = {};
+    this.tokens             = {};
+    this.reconnect_tokens   = {};
 
     _.defaults(this.options, {
       name:           name,
@@ -21,9 +23,8 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
       path:           ["/", structure_name,"/", name].join(""),
       protocol:       "ws://",
       transports:     [ "websocket", "xhr-polling" ],
-      tokenParam:     "token",                        // Optional - defaults to 'token'   
+      tokenParam:     "token",                        // Optional - defaults to 'token'
     });
-
 
     var self    = this, 
         config  = env.config, 
@@ -37,8 +38,6 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
       cb(); 
     });
 
-    this.tokens             = {};
-    this.reconnect_tokens   = {};
 
     this.sessions = new this.SessionsCollection();
 
@@ -153,9 +152,7 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
     this.tokens[token] = key;
     settings.query = this.options.tokenParam+"="+token;
     if(options.sessionData){
-      var session = this.sessions.get(key);
-      if(session) session.set(options.sessionData);
-      else this.sessionsData[key] = options.sessionData;
+      this.sessionsData[key] = options.sessionData;
     }
     cb(null, options.string?JSON.stringify(settings): settings);
   },
@@ -277,8 +274,8 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
       })(event, handler);
 
     }
-    socket.emit("init", init );
     session.addSocket(socket);
+    socket.emit("init", init );
 
     socket.once("disconnect", function(){
       self.reconnect_tokens[socket.reconnect_token] = session.id;
@@ -311,38 +308,40 @@ var WebsocketApp = EventedClass.extend("WebsocketApp", {
   handleRequest: helpers.chain([
 
     function(req, cb){
-
-      var token = req._query[this.options.tokenParam];
-      var key   = this.tokens[token];
-      
-      if(!key) {
-        var reconnect_token = req._query.reconnect_token;
-        if(!reconnect_token) return cb(null, false);
-        key = this.reconnect_tokens[reconnect_token];
-        if(!key) return cb(null, false);
-        delete this.reconnect_tokens[reconnect_token];
-      }
-      else{
-        delete this.tokens[token];
-      }
-
-      return cb(null, key, req);
-
+      cb(null, {
+        req: req,
+        token: req._query[this.options.tokenParam],
+        reconnect_token: req._query.reconnect_token,
+      });
     },
-  
-    function( key, req, cb ){
-      var session = this.sessions.get(key);
-      if(!session) {
-        session = this.sessions.add({ key: key });
-        var sessionData = this.sessionsData[key];
-        if(sessionData){
-          session.set(sessionData);
-          delete this.sessionsData[key];
-        }
+
+    function(ctx, cb){
+      if(ctx.token && this.tokens.hasOwnProperty(ctx.token)){
+        ctx.key = this.tokens[ctx.token];
+        delete this.tokens[ctx.token];
       }
-      req.session = session;
+      else if(ctx.reconnect_token && this.reconnect_tokens.hasOwnProperty(ctx.reconnect_token)){
+        ctx.key = this.reconnect_tokens[ctx.reconnect_token];
+        delete this.reconnect_tokens[ctx.reconnect_token]
+      }
+      else return cb.finish("Connection error");
+
+      cb(null, ctx);
+    },
+
+    function(ctx, cb){
+      if(!ctx.key) return cb.finish("Connection error");
+      ctx.session = this.sessions.get(ctx.key) || this.sessions.add({key: ctx.key});
+      cb(null, ctx);
+    },
+
+    function(ctx, cb){
+      var sessionData = this.sessionsData[ctx.key];
+      sessionData && ctx.session.set(sessionData);
+      delete this.sessionsData[ctx.key];
+      ctx.req.session = ctx.session;
       cb(null, true);
-    },
+    }
 
   ]),
 
